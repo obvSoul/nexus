@@ -2,6 +2,9 @@
 
 Le développement a eu lieu hors de Git jusqu'à la 1.0.5 : ce dépôt contient le code de la 1.0.5, sans l'historique détaillé des versions précédentes.
 
+## 1.0.7
+- Au démarrage de Windows, Alt+Espace n'attend plus la vérification de l'index : elle se fait ensuite en arrière-plan, et une réparation éventuelle a lieu au lancement suivant.
+
 ## 1.0.6
 - Le widget propose aussi les programmes installés sans raccourci dans le menu Démarrer, comme VirtualBox (dossiers `Program Files` et `AppData\Local\Programs`).
 

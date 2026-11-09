@@ -286,6 +286,36 @@ public sealed class IndexerTests : IDisposable
     }
 
     [Fact]
+    public void A_start_with_Windows_puts_off_the_check_and_the_next_start_repairs()
+    {
+        for (int i = 0; i < 3000; i++) W($"file{i}.txt");
+        Indexed().Stop();
+        NexusDatabase.ReleaseAll();
+        var bytes = File.ReadAllBytes(_db.FilePath);
+        Array.Fill(bytes, (byte)0xA5, bytes.Length / 2, bytes.Length - bytes.Length / 2);
+        File.WriteAllBytes(_db.FilePath, bytes);
+
+        var (db, notice) = DatabaseMaintenance.OpenWithRecovery(_db.FilePath, deferCheck: true);
+        Assert.Null(notice);
+        Assert.False(DatabaseMaintenance.CheckOrRequestRepair(db, Nexus.Core.Indexing.NullLog.Instance));
+        NexusDatabase.ReleaseAll();
+
+        var (_, repaired) = DatabaseMaintenance.OpenWithRecovery(_db.FilePath, deferCheck: true);
+        Assert.NotNull(repaired);
+        Assert.NotEmpty(Directory.GetFiles(Path.GetDirectoryName(_db.FilePath)!, "*.corrupt-*"));
+        Assert.False(File.Exists(_db.FilePath + ".check"));
+    }
+
+    [Fact]
+    public void A_healthy_database_passes_the_deferred_check()
+    {
+        W("a.txt");
+        Indexed().Stop();
+        Assert.True(DatabaseMaintenance.CheckOrRequestRepair(_db, Nexus.Core.Indexing.NullLog.Instance));
+        Assert.False(File.Exists(_db.FilePath + ".check"));
+    }
+
+    [Fact]
     public void Old_v1_database_is_migrated_and_keeps_user_data()
     {
         string path = Path.Combine(_base, "v1", "old.db");

@@ -16,6 +16,8 @@ namespace Nexus.App;
 
 public partial class App : Application
 {
+    private const int DeferredCheckDelayMs = 30_000;
+
     private ServiceProvider? _services;
     private INexusLog _log = NullLog.Instance;
     private Mutex? _instance;
@@ -58,9 +60,14 @@ public partial class App : Application
 
         string? notice;
         NexusSettings settings;
+        NexusDatabase database;
+        bool checkLater;
         try
         {
-            var (db, n) = DatabaseMaintenance.OpenWithRecovery(NexusDatabase.DefaultPath, _log);
+            // Started with Windows, the shortcut must not wait for a full read of the index on a cold disk.
+            var (db, n) = DatabaseMaintenance.OpenWithRecovery(NexusDatabase.DefaultPath, _log, deferCheck: background);
+            database = db;
+            checkLater = background && DatabaseMaintenance.NeedsCheck(db);
             notice = n;
             settings = new SettingsStore(db).Load();
             var current = settings;
@@ -130,6 +137,8 @@ public partial class App : Application
             _services.GetRequiredService<MainViewModel>().OpenSearch(text);
         };
         widget.Start();
+        _log.Info($"Widget ready {(DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime).TotalMilliseconds:N0} ms after process start");
+        if (checkLater) StartDeferredCheck(database);
         SessionEnding += (_, _) => _quitting = true; // Windows or an installer is closing NEXUS: nothing may hold it back
 
         _showWait = ThreadPool.RegisterWaitForSingleObject(_showRequest, (_, _) => Dispatcher.BeginInvoke(ShowMain), null, Timeout.Infinite, false);
@@ -137,6 +146,22 @@ public partial class App : Application
         if (!background || !widget.Enabled) ShowMain(); // started hidden without a widget, NEXUS would be unreachable
         indexer.Start(); // background thread; first scan is delayed a few seconds
         if (notice is not null && !background) MessageBox.Show(notice, "NEXUS", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private void StartDeferredCheck(NexusDatabase database)
+    {
+        var thread = new Thread(() =>
+        {
+            BackgroundMode.BeginOnCurrentThread();
+            Thread.Sleep(DeferredCheckDelayMs); // the session is still opening: leave the disk to it
+            try
+            {
+                if (!DatabaseMaintenance.CheckOrRequestRepair(database, _log))
+                    Dispatcher.BeginInvoke(() => MessageBox.Show("L'index de NEXUS est endommagé. Il sera réparé au prochain lancement de NEXUS.", "NEXUS", MessageBoxButton.OK, MessageBoxImage.Warning));
+            }
+            catch (System.IO.IOException ex) { _log.Error("Deferred integrity check failed", ex); }
+        }) { IsBackground = true, Name = "NexusDeferredCheck", Priority = ThreadPriority.BelowNormal };
+        thread.Start();
     }
 
     /// <summary>The main window is only built when it is first needed: a NEXUS started with Windows does not pay for it.</summary>

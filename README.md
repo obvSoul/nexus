@@ -37,7 +37,7 @@ SDK .NET 10 et Inno Setup 6 requis :
 
 ```powershell
 installer\build.ps1            # tests, build Release autonome, installateur dans artifacts\
-installer\build.ps1 -Version 1.0.6 -SkipTests
+installer\build.ps1 -Version 1.0.7 -SkipTests
 ```
 
 Pour publier une mise à jour : changez `Version` dans `Directory.Build.props`, relancez `build.ps1` et distribuez le nouvel installateur.

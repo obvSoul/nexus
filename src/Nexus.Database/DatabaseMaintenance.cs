@@ -39,21 +39,40 @@ public static class DatabaseMaintenance
         return Convert.ToString(cmd.ExecuteScalar()) ?? "no result";
     }
 
+    private static string RepairRequestPath(string path) => path + ".check";
+
+    /// <summary>True when the last session did not end cleanly, so the database has not been verified since.</summary>
+    public static bool NeedsCheck(NexusDatabase db) => db.GetMeta("clean_shutdown") == "0";
+
+    /// <summary>The check put off by a start with Windows. If it fails, the next start repairs the database.</summary>
+    public static bool CheckOrRequestRepair(NexusDatabase db, INexusLog log)
+    {
+        string result;
+        try { result = QuickCheck(db); }
+        catch (SqliteException ex) { result = ex.Message; }
+        if (result == "ok") return true;
+        log.Warn("Integrity check failed, repair requested for the next start: " + result);
+        File.WriteAllText(RepairRequestPath(db.FilePath), "");
+        return false;
+    }
+
     /// <summary>
     /// Opens the database. After an unclean shutdown it runs an integrity check. If the file is corrupt it is set aside
     /// (never deleted), the latest backup is restored when valid, otherwise a fresh index is created (rescan needed).
+    /// With <paramref name="deferCheck"/> the check is left to the caller, unless a repair was requested earlier.
     /// </summary>
-    public static (NexusDatabase Db, string? Notice) OpenWithRecovery(string path, INexusLog? log = null)
+    public static (NexusDatabase Db, string? Notice) OpenWithRecovery(string path, INexusLog? log = null, bool deferCheck = false)
     {
         log ??= NullLog.Instance;
         try
         {
             var db = new NexusDatabase(path);
             db.Initialize();
-            if (db.GetMeta("clean_shutdown") == "0")
+            if (File.Exists(RepairRequestPath(path)) || (!deferCheck && NeedsCheck(db)))
             {
                 string check = QuickCheck(db);
                 if (check != "ok") throw new InvalidDataException("Integrity check failed: " + check);
+                File.Delete(RepairRequestPath(path));
             }
             return (db, null);
         }
@@ -93,6 +112,7 @@ public static class DatabaseMaintenance
 
     private static void SetAside(string path)
     {
+        File.Delete(RepairRequestPath(path));
         string stamp = DateTime.Now.ToString("yyyyMMddHHmmss");
         if (File.Exists(path)) File.Move(path, $"{path}.corrupt-{stamp}", overwrite: true);
         foreach (var side in new[] { path + "-wal", path + "-shm" })
