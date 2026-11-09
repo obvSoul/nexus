@@ -141,7 +141,7 @@ Everything est optionnel (repli sur l'index interne) ; aucune suppression automa
       Une seule instance à la fois (un second lancement ramène la fenêtre existante). Désinstallation complète, avec le choix de garder
       ou non l'index, les favoris et les réglages. Mise à jour : installateur plus récent lancé directement ou depuis Paramètres ; même
       emplacement, index conservé, relance automatique. `installer/test-installer.ps1` vérifie tout ce parcours dans un dossier isolé.
-- [ ] Non implémenté : **Everything SDK** (nécessite d'installer Everything, absent de cette machine ; le moteur interne répond déjà
+- [ ] Non implémenté : **Everything SDK** (nécessite d'installer Everything ; le moteur interne répond déjà
       en quelques millisecondes), **USN Journal et File ID** (droits administrateur requis). Voir les limites de la Phase 4. : voir le cahier des charges
 
 Limite connue : la lecture directe du MFT/USN exige des droits administrateur ; sans élévation, l'indexeur
