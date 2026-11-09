@@ -1,0 +1,120 @@
+<UserControl x:Class="Nexus.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <Style x:Key="Heading" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,18,0,8"/>
+        </Style>
+        <Style x:Key="Option" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+            <Setter Property="Margin" Value="0,4"/>
+        </Style>
+    </UserControl.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,12,28,28">
+            <TextBlock Text="Paramètres" FontSize="28" FontWeight="SemiBold"/>
+            <TextBlock Text="{Binding Notice}" Foreground="{StaticResource AccentTextBrush}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+
+            <TextBlock Text="Indexation" Style="{StaticResource Heading}"/>
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <CheckBox Style="{StaticResource Option}" IsChecked="{Binding Throttle}" Content="Ralentir quand d'autres programmes utilisent le processeur"/>
+                    <CheckBox Style="{StaticResource Option}" IsChecked="{Binding Watch}" Content="Suivre les modifications des fichiers en temps réel"/>
+                    <CheckBox Style="{StaticResource Option}" IsChecked="{Binding ScanAtStartup}" Content="Lancer une analyse incrémentale au démarrage"/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Search Widget" Style="{StaticResource Heading}"/>
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <CheckBox Style="{StaticResource Option}" IsChecked="{Binding WidgetEnabled}" Content="Activer le widget (NEXUS reste disponible dans la zone de notification quand sa fenêtre est fermée)"/>
+                    <Grid Margin="0,8,0,0" IsEnabled="{Binding WidgetEnabled}">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="200"/><ColumnDefinition Width="320"/></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                        <TextBlock Text="Raccourci clavier" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Style="{StaticResource SearchBox}" Padding="8,5" Margin="0,3" IsReadOnly="True" Text="{Binding WidgetHotkey}" IsReadOnlyCaretVisible="False"
+                                 ToolTip="Cliquez ici puis appuyez sur la combinaison voulue (Échap pour annuler)"
+                                 GotKeyboardFocus="Hotkey_GotFocus" LostKeyboardFocus="Hotkey_LostFocus" PreviewKeyDown="Hotkey_KeyDown"/>
+                        <TextBlock Grid.Row="1" Text="Taille de la barre" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,3" ItemsSource="{Binding WidgetSizeNames}" SelectedIndex="{Binding WidgetSize}"/>
+                        <TextBlock Grid.Row="2" Text="Position" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,3" ItemsSource="{Binding WidgetPositions}" SelectedIndex="{Binding WidgetPosition}"/>
+                        <TextBlock Grid.Row="3" Text="Écran" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,3" ItemsSource="{Binding WidgetScreens}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding WidgetScreen}"/>
+                        <TextBlock Grid.Row="4" Text="Nombre maximal de résultats" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Row="4" Grid.Column="1" Margin="0,3" ItemsSource="{Binding WidgetResultCounts}" SelectedItem="{Binding WidgetMaxResults}"/>
+                    </Grid>
+                    <TextBlock Text="{Binding Widget.HotkeyError}" Foreground="{StaticResource WarnBrush}" TextWrapping="Wrap"/>
+                    <CheckBox Style="{StaticResource Option}" IsEnabled="{Binding WidgetEnabled}" IsChecked="{Binding WidgetKeepLast}" Content="Conserver la dernière recherche à la réouverture"/>
+                    <CheckBox Style="{StaticResource Option}" IsEnabled="{Binding WidgetEnabled}" IsChecked="{Binding WidgetAutostart}" Content="Démarrer le widget avec Windows (NEXUS démarre en arrière-plan, sans fenêtre)"/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Exclusions" Style="{StaticResource Heading}"/>
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8"
+                               Text="Un chemin complet exclut ce dossier. Un simple nom (node_modules) exclut tous les dossiers qui portent ce nom. Vos fichiers ne sont jamais modifiés."/>
+                    <ItemsControl ItemsSource="{Binding Exclusions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="0,1">
+                                    <Button DockPanel.Dock="Right" Content="&#xE711;" Style="{StaticResource IconButton}" ToolTip="Retirer"
+                                            Command="{Binding DataContext.RemoveExclusionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                    <TextBlock Text="{Binding}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <WrapPanel Margin="0,8,0,0">
+                        <Button Content="Exclure un dossier…" Command="{Binding AddExclusionFolderCommand}" Style="{StaticResource ActionButton}"/>
+                        <TextBox Style="{StaticResource SearchBox}" Width="200" Padding="8,5" Margin="0,0,8,8" Text="{Binding NewExclusion, UpdateSourceTrigger=PropertyChanged}" ToolTip="Nom de dossier, par exemple node_modules"/>
+                        <Button Content="Exclure ce nom" Command="{Binding AddExclusionNameCommand}" Style="{StaticResource ActionButton}"/>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Recherche dans le contenu (content:mot)" Style="{StaticResource Heading}"/>
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <CheckBox Style="{StaticResource Option}" IsChecked="{Binding ContentEnabled}" Content="Lire le texte des fichiers des dossiers ci-dessous (texte, code, Word, Excel, PowerPoint, OpenDocument)"/>
+                    <CheckBox Style="{StaticResource Option}" IsChecked="{Binding UseWindowsSearch}" Content="Utiliser aussi l'index de Windows Search (PDF et autres formats, dans les dossiers indexés par Windows)"/>
+                    <ItemsControl ItemsSource="{Binding ContentFolders}" Margin="0,8,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="0,1">
+                                    <Button DockPanel.Dock="Right" Content="&#xE711;" Style="{StaticResource IconButton}" ToolTip="Retirer"
+                                            Command="{Binding DataContext.RemoveContentFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                    <TextBlock Text="{Binding}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Content="Ajouter un dossier…" Command="{Binding AddContentFolderCommand}" Style="{StaticResource ActionButton}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Données" Style="{StaticResource Heading}"/>
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="{Binding DatabaseInfo}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    <WrapPanel>
+                        <Button Content="Effacer l'historique des recherches" Command="{Binding ClearHistoryCommand}" Style="{StaticResource ActionButton}"/>
+                        <Button Content="Ouvrir les journaux techniques" Command="{Binding OpenLogsCommand}" Style="{StaticResource ActionButton}"/>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Mise à jour" Style="{StaticResource Heading}"/>
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="{Binding VersionText}" FontWeight="SemiBold"/>
+                    <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,8"
+                               Text="NEXUS fonctionne sans Internet : choisissez un fichier NEXUS-Setup-x.y.z.exe plus récent. L'index et les réglages sont conservés."/>
+                    <Button Content="Installer une mise à jour…" Command="{Binding InstallUpdateCommand}" Style="{StaticResource ActionButton}" HorizontalAlignment="Left"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

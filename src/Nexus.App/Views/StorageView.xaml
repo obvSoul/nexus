@@ -1,0 +1,203 @@
+<UserControl x:Class="Nexus.App.Views.StorageView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:Nexus.App.Controls"
+             xmlns:cv="clr-namespace:Nexus.App.Converters">
+    <UserControl.Resources>
+        <cv:NotEmptyToVisibilityConverter x:Key="NotEmpty"/>
+        <Style x:Key="TabPanel" TargetType="Grid">
+            <Setter Property="Visibility" Value="Collapsed"/>
+        </Style>
+        <DataTemplate x:Key="NameWithIcon">
+            <StackPanel Orientation="Horizontal">
+                <Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,8,0"/>
+                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="CleanupRow">
+            <Grid Margin="0,3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/><ColumnDefinition Width="110"/><ColumnDefinition Width="100"/><ColumnDefinition Width="130"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding Path}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="{Binding SizeText}" HorizontalAlignment="Right" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                <ProgressBar Grid.Column="2" Style="{StaticResource DiskBar}" Value="{Binding Percent, Mode=OneWay}" Height="5" Margin="0,0,10,0"/>
+                <StackPanel Grid.Column="3" Orientation="Horizontal">
+                    <TextBlock Text="{Binding Extra}" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <Button Content="&#xE8DA;" Style="{StaticResource IconButton}" ToolTip="Ouvrir l'emplacement" Click="OpenLocation_Click" Tag="{Binding Path}">
+                        <Button.Visibility>
+                            <Binding Path="Path" Converter="{StaticResource NotEmpty}"/>
+                        </Button.Visibility>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+        <DataTemplate x:Key="BarCell">
+            <ProgressBar Style="{StaticResource DiskBar}" Value="{Binding Percent, Mode=OneWay}" Width="90" Height="6"/>
+        </DataTemplate>
+    </UserControl.Resources>
+    <Grid Margin="28,4,28,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Disks -->
+        <ItemsControl Grid.Row="0" ItemsSource="{Binding Disks}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Width="300" Margin="0,0,8,8" Padding="12" Cursor="Hand" MouseLeftButtonUp="Disk_Click">
+                        <Border.Style>
+                            <Style TargetType="Border" BasedOn="{StaticResource Card}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                        <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Kind}" Foreground="{StaticResource AccentTextBrush}"/>
+                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                            </DockPanel>
+                            <TextBlock Text="{Binding FileSystem}" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
+                            <ProgressBar Style="{StaticResource DiskBar}" Value="{Binding Percent, Mode=OneWay}" Margin="0,8,0,6">
+                                <ProgressBar.Resources>
+                                    <Style TargetType="ProgressBar" BasedOn="{StaticResource DiskBar}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsAlmostFull}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource WarnBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ProgressBar.Resources>
+                            </ProgressBar>
+                            <TextBlock Text="{Binding Summary}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <TextBlock Text="● sélectionné" Foreground="{StaticResource AccentTextBrush}" FontSize="12">
+                                    <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers><DataTrigger Binding="{Binding IsSelected}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                                </TextBlock>
+                                <Button Content="Indexer ce disque" Click="IndexDisk_Click" Tag="{Binding}">
+                                    <Button.Style><Style TargetType="Button" BasedOn="{StaticResource ActionButton}"><Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers><DataTrigger Binding="{Binding IsIndexed}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- Tabs + status -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,2,0,8">
+            <ListBox ItemsSource="{Binding Tabs}" SelectedIndex="{Binding TabIndex}" Background="Transparent" BorderThickness="0"
+                     ItemContainerStyle="{StaticResource TabItem}" Focusable="False">
+                <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ListBox.ItemsPanel>
+            </ListBox>
+            <Button Content="Recalculer" Command="{Binding RecomputeCommand}" Style="{StaticResource ActionButton}" Margin="12,0,0,0"
+                    ToolTip="Vérifie le disque, met l'index à jour, puis recalcule les tailles de dossiers."/>
+        </StackPanel>
+        <TextBlock Grid.Row="2" Text="{Binding Status}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="2,0,0,8"/>
+
+        <Grid Grid.Row="3">
+            <!-- Explorer -->
+            <Grid>
+                <Grid.Style><Style TargetType="Grid" BasedOn="{StaticResource TabPanel}"><Style.Triggers>
+                    <DataTrigger Binding="{Binding TabIndex}" Value="0"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Grid.Style>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <DockPanel Margin="0,0,0,6">
+                    <Button DockPanel.Dock="Left" Content="&#xE74A;" Style="{StaticResource IconButton}" Command="{Binding GoUpCommand}" ToolTip="Dossier parent" Margin="0,0,8,0"/>
+                    <StackPanel>
+                        <TextBlock Text="{Binding CurrentPath}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding FolderSummary}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </DockPanel>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="8"/><ColumnDefinition Width="400"/></Grid.ColumnDefinitions>
+                    <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
+                        <ctl:TreemapControl x:Name="Map" Root="{Binding Treemap}" FolderActivated="Map_FolderActivated">
+                            <ctl:TreemapControl.ContextMenu>
+                                <ContextMenu Opened="MapMenu_Opened">
+                                    <MenuItem x:Name="MapOpenLocation" Header="Ouvrir l'emplacement" Click="MapOpenLocation_Click"/>
+                                </ContextMenu>
+                            </ctl:TreemapControl.ContextMenu>
+                        </ctl:TreemapControl>
+                    </Border>
+                    <DataGrid Grid.Column="2" ItemsSource="{Binding Entries}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                              HeadersVisibility="Column" GridLinesVisibility="None" RowHeight="28" x:Name="EntryGrid">
+                        <DataGrid.RowStyle><Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                            <EventSetter Event="MouseDoubleClick" Handler="EntryRow_DoubleClick"/></Style></DataGrid.RowStyle>
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Nom" Width="*" CellTemplate="{StaticResource NameWithIcon}"/>
+                            <DataGridTextColumn Header="Taille" Binding="{Binding SizeText}" Width="70"/>
+                            <DataGridTemplateColumn Header="%" Width="110"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+                                <StackPanel><TextBlock Text="{Binding PercentText}" FontSize="11" Foreground="{StaticResource MutedBrush}"/>
+                                    <ProgressBar Style="{StaticResource DiskBar}" Value="{Binding Percent, Mode=OneWay}" Height="4" Width="90" HorizontalAlignment="Left"/></StackPanel>
+                            </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Grid>
+
+            <!-- Biggest files -->
+            <Grid>
+                <Grid.Style><Style TargetType="Grid" BasedOn="{StaticResource TabPanel}"><Style.Triggers>
+                    <DataTrigger Binding="{Binding TabIndex}" Value="1"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Grid.Style>
+                <DataGrid ItemsSource="{Binding BigFiles}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                          HeadersVisibility="Column" GridLinesVisibility="None" RowHeight="28">
+                    <DataGrid.RowStyle><Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                        <EventSetter Event="MouseDoubleClick" Handler="ListRow_DoubleClick"/></Style></DataGrid.RowStyle>
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Nom" Width="2*" CellTemplate="{StaticResource NameWithIcon}"/>
+                        <DataGridTextColumn Header="Taille" Binding="{Binding SizeText}" Width="90"/>
+                        <DataGridTemplateColumn Header="" Width="110" CellTemplate="{StaticResource BarCell}"/>
+                        <DataGridTextColumn Header="Emplacement" Binding="{Binding Location}" Width="3*"/>
+                        <DataGridTextColumn Header="Modifié" Binding="{Binding Extra}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+
+            <!-- Biggest folders -->
+            <Grid>
+                <Grid.Style><Style TargetType="Grid" BasedOn="{StaticResource TabPanel}"><Style.Triggers>
+                    <DataTrigger Binding="{Binding TabIndex}" Value="2"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Grid.Style>
+                <DataGrid ItemsSource="{Binding BigFolders}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                          HeadersVisibility="Column" GridLinesVisibility="None" RowHeight="28">
+                    <DataGrid.RowStyle><Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                        <EventSetter Event="MouseDoubleClick" Handler="ListRow_DoubleClick"/></Style></DataGrid.RowStyle>
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Dossier" Width="3*"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+                            <StackPanel Orientation="Horizontal"><Image Source="{Binding Icon}" Width="16" Height="16" Margin="0,0,8,0"/>
+                                <TextBlock Text="{Binding Path}" TextTrimming="CharacterEllipsis"/></StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Contenu direct" Binding="{Binding SizeText}" Width="110"/>
+                        <DataGridTemplateColumn Header="" Width="110" CellTemplate="{StaticResource BarCell}"/>
+                        <DataGridTextColumn Header="Avec sous-dossiers" Binding="{Binding Extra}" Width="2*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+
+            <!-- Temp and caches -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ScrollViewer.Style><Style TargetType="ScrollViewer"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers>
+                    <DataTrigger Binding="{Binding TabIndex}" Value="3"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></ScrollViewer.Style>
+                <StackPanel>
+                    <TextBlock Text="{Binding CleanupSummary}" Foreground="{StaticResource WarnBrush}" TextWrapping="Wrap" Margin="2,0,0,10"/>
+                    <TextBlock Text="Emplacements temporaires connus" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                    <ItemsControl ItemsSource="{Binding KnownTemp}" ItemTemplate="{StaticResource CleanupRow}"/>
+                    <TextBlock Text="Fichiers temporaires par extension" FontWeight="SemiBold" Margin="0,14,0,6"/>
+                    <ItemsControl ItemsSource="{Binding TempExtensions}" ItemTemplate="{StaticResource CleanupRow}"/>
+                    <TextBlock Text="Dossiers de cache détectés" FontWeight="SemiBold" Margin="0,14,0,6"/>
+                    <ItemsControl ItemsSource="{Binding Caches}" ItemTemplate="{StaticResource CleanupRow}"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

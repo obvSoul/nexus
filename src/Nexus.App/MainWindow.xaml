@@ -1,0 +1,85 @@
+﻿<Window x:Class="Nexus.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:cv="clr-namespace:Nexus.App.Converters"
+        Title="NEXUS" Width="1200" Height="760" MinWidth="800" MinHeight="520"
+        WindowStartupLocation="CenterScreen" Style="{StaticResource NexusWindow}">
+    <Window.Resources>
+        <cv:NotEmptyToVisibilityConverter x:Key="NotEmpty"/>
+        <cv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
+    <Window.InputBindings>
+        <KeyBinding Key="K" Modifiers="Ctrl" Command="{Binding FocusSearchCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+    </Window.InputBindings>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Border Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+            <DockPanel>
+                <Border DockPanel.Dock="Bottom" Margin="12,0,12,14" Padding="10,8" CornerRadius="6" Background="{StaticResource SurfaceBrush}"
+                        ToolTip="État de l'indexation (page Indexation)">
+                    <TextBlock Text="{Binding IndexSummary}" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"/>
+                </Border>
+                <Button DockPanel.Dock="Bottom" Style="{StaticResource ActionButton}" Margin="12,0,12,8" Command="{Binding OpenWidgetCommand}"
+                        ToolTip="Ouvrir le widget de recherche" Visibility="{Binding Widget.Enabled, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Recherche rapide"/>
+                    </StackPanel>
+                </Button>
+                <TextBlock DockPanel.Dock="Top" Text="NEXUS" FontSize="20" FontWeight="Bold" Foreground="{StaticResource AccentTextBrush}" Margin="20,20,0,16"/>
+                <ListBox ItemsSource="{Binding Pages}" SelectedItem="{Binding CurrentPage}" Background="Transparent" BorderThickness="0"
+                         ItemContainerStyle="{StaticResource NavItem}" Focusable="False"/>
+            </DockPanel>
+        </Border>
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <Grid Margin="28,16,28,8" MaxWidth="720" HorizontalAlignment="Stretch">
+                <TextBox x:Name="SearchBox" Style="{StaticResource SearchBox}" Padding="34,8,34,8"
+                         Text="{Binding State.Text, UpdateSourceTrigger=PropertyChanged}"
+                         GotKeyboardFocus="SearchBox_GotFocus" LostKeyboardFocus="SearchBox_LostFocus">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding SubmitSearchCommand}"/>
+                        <KeyBinding Key="Escape" Command="{Binding ClearSearchCommand}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
+                <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Foreground="{StaticResource MutedBrush}"
+                           VerticalAlignment="Center" Margin="12,0,0,0" IsHitTestVisible="False"/>
+                <TextBlock Text="Rechercher des fichiers…   Ctrl+K" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"
+                           Margin="36,0,0,0" IsHitTestVisible="False">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Text.Length, ElementName=SearchBox}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <Button Content="&#xE711;" Style="{StaticResource IconButton}" HorizontalAlignment="Right" Margin="0,0,4,0"
+                        Command="{Binding ClearSearchCommand}" Visibility="{Binding State.Text, Converter={StaticResource NotEmpty}}" ToolTip="Effacer"/>
+                <Popup IsOpen="{Binding SuggestionsOpen}" PlacementTarget="{Binding ElementName=SearchBox}" Placement="Bottom"
+                       StaysOpen="True" Width="{Binding ActualWidth, ElementName=SearchBox}" VerticalOffset="4">
+                    <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="4">
+                        <ListBox ItemsSource="{Binding Suggestions}" Background="Transparent" BorderThickness="0" ItemContainerStyle="{StaticResource SuggestItem}"
+                                 PreviewMouseDown="Suggestions_PreviewMouseDown" Focusable="False">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Margin="6,4">
+                                        <TextBlock Text="&#xE81C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Foreground="{StaticResource MutedBrush}" Margin="0,0,10,0"/>
+                                        <TextBlock Text="{Binding}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+                </Popup>
+            </Grid>
+            <ContentControl Grid.Row="1" Content="{Binding CurrentPage}"/>
+        </Grid>
+    </Grid>
+</Window>

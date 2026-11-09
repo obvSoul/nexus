@@ -1,0 +1,63 @@
+<UserControl x:Class="Nexus.App.Views.IndexationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,12,28,28">
+            <TextBlock Text="Indexation" FontSize="28" FontWeight="SemiBold"/>
+            <TextBlock Text="{Binding StateText}" Foreground="{StaticResource AccentTextBrush}" FontSize="15" Margin="0,4,0,2"/>
+            <TextBlock Text="{Binding CurrentPath}" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" MinHeight="18"/>
+
+            <UniformGrid Rows="1" Columns="4" Margin="0,12,0,0">
+                <Border Style="{StaticResource Card}" Margin="0,0,8,0"><StackPanel>
+                    <TextBlock Text="Fichiers indexés" Foreground="{StaticResource MutedBrush}"/>
+                    <TextBlock Text="{Binding FilesText}" FontSize="22" FontWeight="SemiBold"/></StackPanel></Border>
+                <Border Style="{StaticResource Card}" Margin="4,0"><StackPanel>
+                    <TextBlock Text="Dossiers parcourus" Foreground="{StaticResource MutedBrush}"/>
+                    <TextBlock Text="{Binding FoldersText}" FontSize="22" FontWeight="SemiBold"/></StackPanel></Border>
+                <Border Style="{StaticResource Card}" Margin="4,0"><StackPanel>
+                    <TextBlock Text="Inchangés (ignorés)" Foreground="{StaticResource MutedBrush}"/>
+                    <TextBlock Text="{Binding SkippedText}" FontSize="22" FontWeight="SemiBold"/></StackPanel></Border>
+                <Border Style="{StaticResource Card}" Margin="8,0,0,0"><StackPanel>
+                    <TextBlock Text="Accès refusés" Foreground="{StaticResource MutedBrush}"/>
+                    <TextBlock Text="{Binding DeniedText}" FontSize="22" FontWeight="SemiBold"/></StackPanel></Border>
+            </UniformGrid>
+            <TextBlock Margin="2,8,0,0" Foreground="{StaticResource MutedBrush}">
+                <Run Text="Dernière analyse :"/> <Run Text="{Binding LastScanText, Mode=OneWay}"/>
+            </TextBlock>
+
+            <WrapPanel Margin="0,12,0,0">
+                <Button Content="Analyser maintenant" Command="{Binding ScanNowCommand}" Style="{StaticResource ActionButton}"/>
+                <Button Content="Analyse complète" Command="{Binding DeepScanCommand}" Style="{StaticResource ActionButton}"
+                        ToolTip="Compare tous les fichiers, même dans les dossiers inchangés (détecte les modifications sur place)."/>
+                <Button Content="{Binding PauseLabel}" Command="{Binding TogglePauseCommand}" Style="{StaticResource ActionButton}"/>
+                <Button Content="Sauvegarder l'index" Command="{Binding BackupNowCommand}" Style="{StaticResource ActionButton}"/>
+            </WrapPanel>
+            <TextBlock Text="{Binding Notice}" Foreground="{StaticResource MutedBrush}" Margin="2,2,0,0" TextWrapping="Wrap"/>
+
+            <TextBlock Text="Dossiers indexés" FontSize="16" FontWeight="SemiBold" Margin="0,20,0,8"/>
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <ItemsControl ItemsSource="{Binding Roots}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding IsEnabled}" Content="{Binding Path}" Foreground="{StaticResource TextBrush}" Margin="0,3"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Content="Ajouter un dossier…" Command="{Binding AddFolderCommand}" Style="{StaticResource ActionButton}" Margin="0,10,0,0" HorizontalAlignment="Left"/>
+                    <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0"
+                               Text="Décocher un dossier supprime seulement ses entrées de l'index ; vos fichiers ne sont jamais modifiés."/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Activité récente" FontSize="16" FontWeight="SemiBold" Margin="0,20,0,8"/>
+            <Border Style="{StaticResource Card}">
+                <ItemsControl ItemsSource="{Binding Activity}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate><TextBlock Text="{Binding}" Margin="0,2" TextTrimming="CharacterEllipsis"/></DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
