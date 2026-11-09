@@ -51,6 +51,7 @@ public sealed class AppCatalog(INexusLog log)
                 string name = item.Name, target = item.Path;
                 if (AppMatcher.IsLaunchable(name, target)) list.Add(new LaunchableApp(name, target));
             }
+            list.AddRange(InstalledPrograms.Find(ProgramRoots(), list, Nexus.AppAnalyzer.RegistryAppDetector.Detect().Select(a => a.Name)));
             _apps = list;
             Interlocked.Exchange(ref _loadedTick, Environment.TickCount64);
         }
@@ -65,11 +66,20 @@ public sealed class AppCatalog(INexusLog log)
         }
     }
 
+    private static string[] ProgramRoots() =>
+    [
+        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs"),
+    ];
+
+    private static bool IsFile(string target) => Path.IsPathRooted(target) && File.Exists(target);
+
     public static void Launch(LaunchableApp app)
     {
         bool direct = app.Target.Contains("://", StringComparison.Ordinal) || Path.IsPathRooted(app.Target);
         var start = direct
-            ? new ProcessStartInfo(app.Target) { UseShellExecute = true }
+            ? new ProcessStartInfo(app.Target) { UseShellExecute = true, WorkingDirectory = IsFile(app.Target) ? Path.GetDirectoryName(app.Target)! : "" }
             : new ProcessStartInfo("explorer.exe", $"{AppsFolder}\\{app.Target}") { UseShellExecute = true };
         Process.Start(start);
     }
@@ -103,7 +113,7 @@ public sealed class AppCatalog(INexusLog log)
         try
         {
             var id = typeof(IShellItemImageFactory).GUID;
-            SHCreateItemFromParsingName($"{AppsFolder}\\{target}", IntPtr.Zero, ref id, out factory);
+            SHCreateItemFromParsingName(IsFile(target) ? target : $"{AppsFolder}\\{target}", IntPtr.Zero, ref id, out factory);
             if (factory.GetImage(new SIZE { cx = 32, cy = 32 }, SIIGBF_BIGGERSIZEOK | SIIGBF_ICONONLY, out bitmap) != 0) return null;
             if (GetObjectW(bitmap, Marshal.SizeOf<BITMAP>(), out var info) == 0 || info.bmBits == IntPtr.Zero || info.bmBitsPixel != 32) return null;
 

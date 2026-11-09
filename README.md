@@ -2,6 +2,26 @@
 
 Gestionnaire de fichiers et de stockage Windows (WPF, .NET 10, x64).
 
+## Aperçu
+
+Captures de l'application réelle, sur un lecteur de démonstration aux fichiers inventés.
+
+**Recherche rapide (Alt+Espace)** : fichiers et applications, depuis n'importe où.
+
+![Widget de recherche flottant](docs/images/widget.png)
+
+**Recherche** : résultats pendant la frappe sur tout l'index.
+
+![Page de recherche](docs/images/recherche.png)
+
+**Stockage** : ce qui occupe chaque disque, dossier par dossier.
+
+![Page de stockage](docs/images/stockage.png)
+
+**Tableau de bord** : l'état des disques et de l'index en un coup d'œil.
+
+![Tableau de bord](docs/images/accueil.png)
+
 ## Installer
 
 Téléchargez `NEXUS-Setup-x.y.z.exe` depuis la [dernière Release](https://github.com/obvSoul/nexus/releases/latest), puis lancez-le. L'installateur n'est pas signé : si Windows SmartScreen s'affiche, choisissez **Informations complémentaires**, puis **Exécuter quand même**. Windows 64 bits requis, aucun droit administrateur ni .NET préinstallé n'est nécessaire. Pour mettre à jour, lancez un installateur plus récent : l'index et les réglages sont conservés. L'historique des versions est dans [CHANGELOG.md](CHANGELOG.md). Au premier lancement,
@@ -9,7 +29,7 @@ ouvrez **Indexation** et cochez les disques à indexer.
 
 ## Widget de recherche
 
-**Alt+Espace** ouvre ou masque une barre de recherche flottante depuis n'importe quelle application, même quand la fenêtre de NEXUS est fermée (NEXUS reste alors dans la zone de notification ; clic droit sur l'icône pour quitter). Elle utilise le moteur et la syntaxe de la page Search. Les applications du menu Démarrer (programmes, Store, jeux Steam et Epic) apparaissent en tête quand vous tapez un simple nom ; Entrée les lance. Un filtre comme `ext:` ne cherche que des fichiers. Flèches pour choisir, Entrée pour ouvrir, Ctrl+Entrée pour l'emplacement, Échap pour masquer, clic droit pour les autres actions. Réglages dans **Settings > Search Widget** : raccourci, taille de la barre, position, écran, nombre de résultats, dernière recherche, démarrage avec Windows.
+**Alt+Espace** ouvre ou masque une barre de recherche flottante depuis n'importe quelle application, même quand la fenêtre de NEXUS est fermée (NEXUS reste alors dans la zone de notification ; clic droit sur l'icône pour quitter). Elle utilise le moteur et la syntaxe de la page Search. Les applications du menu Démarrer (programmes, Store, jeux Steam et Epic) et les programmes installés sans raccourci apparaissent en tête quand vous tapez un simple nom ; Entrée les lance. Un filtre comme `ext:` ne cherche que des fichiers. Flèches pour choisir, Entrée pour ouvrir, Ctrl+Entrée pour l'emplacement, Échap pour masquer, clic droit pour les autres actions. Réglages dans **Settings > Search Widget** : raccourci, taille de la barre, position, écran, nombre de résultats, dernière recherche, démarrage avec Windows.
 
 ## Compiler
 
@@ -17,7 +37,7 @@ SDK .NET 10 et Inno Setup 6 requis :
 
 ```powershell
 installer\build.ps1            # tests, build Release autonome, installateur dans artifacts\
-installer\build.ps1 -Version 1.0.5 -SkipTests
+installer\build.ps1 -Version 1.0.6 -SkipTests
 ```
 
 Pour publier une mise à jour : changez `Version` dans `Directory.Build.props`, relancez `build.ps1` et distribuez le nouvel installateur.
